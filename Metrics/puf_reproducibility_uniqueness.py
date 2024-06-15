@@ -5,6 +5,7 @@ from pypuf.io import random_inputs
 from numpy.random import default_rng
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 def calculate_entropy(responses):
     value, counts = np.unique(responses, return_counts=True)
@@ -109,6 +110,10 @@ def get_puf(puf_name, noise_level, seed=None):
         print(f"PUF name {puf_name} is not valid.")
         return None
 
+# Crear directorio para guardar las gráficas
+output_dir = "PUF_Evaluation_Plots"
+os.makedirs(output_dir, exist_ok=True)
+
 # Evaluar la reproducibilidad y unicidad para cada PUF disponible en diferentes niveles de ruido
 puf_names = ["ArbiterPUF", "XORArbiterPUF", "XORFeedForwardArbiterPUF", "InterposePUF", "LightweightSecurePUF", "PermutationPUF"]
 noise_levels = np.arange(0.0, 1.0, 0.05)
@@ -128,27 +133,29 @@ df_uniqueness_results = pd.DataFrame(uniqueness_results)
 df_reproducibility_results.to_csv('reproducibility_results.csv', index=False)
 df_uniqueness_results.to_csv('uniqueness_results.csv', index=False)
 
-# Graficar los resultados de reproducibilidad
+# Graficar y guardar los resultados de reproducibilidad en una sola gráfica
+plt.figure(figsize=(14, 8))
 for puf_name in puf_names:
     df_reproducibility = df_reproducibility_results[df_reproducibility_results['puf_name'] == puf_name]
+    plt.plot(df_reproducibility['noise_level'], df_reproducibility['variability'], label=puf_name, marker='o')
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(df_reproducibility['noise_level'], df_reproducibility['variability'], label='Variability')
-    plt.xlabel('Noise Level')
-    plt.ylabel('Variability')
-    plt.title(f'PUF: {puf_name} - Variability')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+plt.xlabel('Noise Level')
+plt.ylabel('Variability')
+plt.title('Variability vs Noise Level for All PUFs')
+plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'Variability_vs_Noise_Level_All_PUFs.png'))
+plt.show()
 
-# Graficar los resultados de unicidad (Hamming Distance)
+# Graficar y guardar los resultados de unicidad (Hamming Distance)
 plt.figure(figsize=(12, 6))
 for puf_name in puf_names:
     df_uniqueness = df_uniqueness_results[df_uniqueness_results['puf_name'] == puf_name]
-    plt.plot(df_uniqueness['noise_level'], df_uniqueness['hamming_distance'], label=puf_name)
+    plt.plot(df_uniqueness['noise_level'], df_uniqueness['hamming_distance'], label=puf_name, marker='o')
 plt.xlabel('Noise Level')
 plt.ylabel('Hamming Distance')
 plt.title('Hamming Distance for all PUFs')
 plt.legend()
 plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'Hamming_Distance_vs_Noise_Level_All_PUFs.png'))
 plt.show()

@@ -73,15 +73,7 @@ class SmartContract:
         """Actualiza el estado para un identificador dado."""
         if identifier in self.state:
             self.state[identifier]["estado"] = new_state
-
-    @staticmethod
-    def from_dict(data):
-        smart_contract = SmartContract()
-        for key, value in data.items():
-            setattr(smart_contract, key, value)
-        return smart_contract
-    
-
+ 
 class Blockchain:
     def __init__(self, num_blocks=10):
         self.chain = [self.create_genesis_block()]
@@ -231,14 +223,6 @@ class Blockchain:
         if self.num_blocks_validated > 0:
             return self.total_hashes / self.total_validation_time
         return 0
-
-def generate_blockchain(blockchain):
-
-    for block_index in range(1, blockchain.num_blocks + 1):
-        new_block = Block(block_index, time.time(), f"Block {block_index} data")
-        
-        blockchain.add_block(new_block)
-
 
 def validate_blockchain(blockchain):
     print()

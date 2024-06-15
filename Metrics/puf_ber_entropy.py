@@ -5,6 +5,7 @@ from pypuf.io import random_inputs
 from numpy.random import default_rng
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 def calculate_entropy(responses):
     value, counts = np.unique(responses, return_counts=True)
@@ -48,16 +49,6 @@ def get_puf(puf_name, noise):
     def get_XORFeedForwardArbiterPUF():
         return simulation.XORFeedForwardArbiterPUF(n=64, k=4, ff=[(32, 63)], noisiness=noise, seed=1)
     
-    def get_BistableRingPUF():
-        n = 64
-        weights = default_rng(1).normal(size=(n+1))
-        return simulation.BistableRingPUF(n=64, weights=weights)
-    
-    def get_XORBistableRingPUF():
-        k, n = 8, 64
-        weights = default_rng(1).normal(size=(k, n+1))
-        return simulation.XORBistableRingPUF(n=64, k=8, weights=weights)
-
     def get_InterposePUF():
         return simulation.InterposePUF(n=64, k_up=8, k_down=8, noisiness=noise, seed=1)
 
@@ -71,8 +62,6 @@ def get_puf(puf_name, noise):
         "ArbiterPUF": get_ArbiterPUF,
         "XORArbiterPUF": get_XORArbiterPUF,
         "XORFeedForwardArbiterPUF": get_XORFeedForwardArbiterPUF,
-        "BistableRingPUF": get_BistableRingPUF,
-        "XORBistableRingPUF": get_XORBistableRingPUF,
         "InterposePUF": get_InterposePUF,
         "LightweightSecurePUF": get_LightweightSecurePUF,
         "PermutationPUF": get_PermutationPUF
@@ -85,8 +74,12 @@ def get_puf(puf_name, noise):
         print(f"PUF name {puf_name} is not valid.")
         return None
 
-# Evaluate PUFs for different noise levels
-puf_names = ["ArbiterPUF", "XORArbiterPUF", "XORFeedForwardArbiterPUF", "BistableRingPUF", "XORBistableRingPUF", "InterposePUF", "LightweightSecurePUF", "PermutationPUF"]
+# Crear directorio para guardar las gráficas
+output_dir = "PUF_Evaluation_Plots"
+os.makedirs(output_dir, exist_ok=True)
+
+# Evaluar PUFs para diferentes niveles de ruido
+puf_names = ["ArbiterPUF", "XORArbiterPUF", "XORFeedForwardArbiterPUF", "InterposePUF", "LightweightSecurePUF", "PermutationPUF"]
 noise_levels = np.arange(0.0, 1.0, 0.05)
 results = []
 
@@ -99,30 +92,19 @@ for puf_name in puf_names:
 df_results = pd.DataFrame(results)
 print(df_results)
 
-# Save the DataFrame to an Excel file
+# Guardar el DataFrame en un archivo CSV
 df_results.to_csv("PUF_Evaluation_Results.csv", index=False)
 
-# Plotting Entropy for all PUFs
+# Graficar y guardar Entropy para todos los PUFs
 plt.figure(figsize=(14, 8))
 for puf_name in puf_names:
     subset = df_results[df_results['puf_name'] == puf_name]
     plt.plot(subset['noise'], subset['entropy'], label=puf_name, marker='o')
 
-plt.title('Entropy vs Noise Level for All PUFs')
+plt.title('Entropy vs Noise Level for Selected PUFs')
 plt.xlabel('Noise Level')
 plt.ylabel('Entropy')
 plt.legend()
 plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'Entropy_vs_Noise_Level_Selected_PUFs.png'))
 plt.show()
-
-# Plotting BER for each PUF
-for puf_name in puf_names:
-    subset = df_results[df_results['puf_name'] == puf_name]
-    plt.figure(figsize=(10, 6))
-    plt.plot(subset['noise'], subset['ber'], label='BER', marker='x')
-    plt.title(f'{puf_name} - BER vs Noise Level')
-    plt.xlabel('Noise Level')
-    plt.ylabel('BER')
-    plt.legend()
-    plt.grid(True)
-    plt.show()

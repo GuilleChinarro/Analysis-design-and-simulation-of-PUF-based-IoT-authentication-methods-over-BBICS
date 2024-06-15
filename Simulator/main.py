@@ -90,12 +90,13 @@ def enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tra
     blockchain.add_smart_contract(smart_contract)
     blockchain_validation.validate_blockchain(blockchain)
     
-    smart_contract = blockchain.get_latest_smart_contract()
-    
     print()
     print("Authentication phase:")
 
+    smart_contract = blockchain.get_latest_smart_contract()
+    
     intentos = 0
+    
     permitido = True
     probabilidad_no_Permitido = 0.2
     permitido = not random.random() < probabilidad_no_Permitido
@@ -146,9 +147,9 @@ def print_states_tracker(states_tracker):
             print(f"- {puf_id}")
 
 def main ():
-    num_crp = 10
+    num_crp = 256
     num_blocks = 10
-    num_PUFs = 10   
+    num_PUFs = 20
     intentos_maximos = 3
 
     smart_contract = blockchain_validation.SmartContract()
