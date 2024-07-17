@@ -13,18 +13,14 @@ def enrollment(smart_contract, num_crp, puf):
 
     identifier = get_id(puf)
 
-    # Generar CRP
     challenges, responses = puf_challenge_response.get_crp(puf, num_crp)
 
-    # Preparar el diccionario de CRP
     crp_dict = dict(zip(map(tuple, challenges), responses))
 
     estado = "Registrado"
 
-    # Almacenar los pares de CRP y el estado en el contrato inteligente
     smart_contract.store_puf(identifier, crp_dict, estado)
 
-    # Mostrar el identificador y el estado
     print(f"Identificador: {identifier}")
     print(f"Estado: {estado}")
 
@@ -33,27 +29,21 @@ def authentication(smart_contract, num_crp, puf, permitido):
 
     identifier = get_id(puf)
     
-    # TODO: Si existieser una lista de identificadores no permitidos, se comprobaria el id y si no esta permitido se transiciona a estado bloqueado, ruptura de método
     if not permitido:
         smart_contract.set_state(identifier, "Bloqueado")
         return 2
-    # Número de responses a evaluar
     num_responses = 64
-    # Arrays para los valores aleatorios y las respuestas
     random_indices = []
     random_responses = []
 
-    # Obtiene "num_responses" responses aleatorios y guarda los índices
     for _ in range(num_responses):
         random_index = random.randint(0, num_crp - 1)
         response = smart_contract.get_response_by_index(identifier, random_index)
         random_indices.append(random_index)
         random_responses.append(response)
 
-    # Obtiene TODOS los challenges
     challenges = np.array(smart_contract.get_challenges(identifier))
 
-    # Genera TODOS los responses de los challenges obtenidos
     generated_responses = puf.eval(challenges)
 
     probabilidad_Fallo_Autenticacion = 0.3
@@ -61,7 +51,6 @@ def authentication(smart_contract, num_crp, puf, permitido):
     if fallo:
         generated_responses = np.where(generated_responses == 1, -1, 1)
 
-    # Valida la autenticación
     authentication_success = False
     for i in range(num_responses):
         if generated_responses[random_indices[i]] == random_responses[i]:
@@ -69,11 +58,11 @@ def authentication(smart_contract, num_crp, puf, permitido):
             break
 
     if authentication_success:
-        print("Autenticación correcta")
+        print("Successful authentication")
         smart_contract.set_state(identifier, "Autenticado")
         return 0
     else:
-        print("Autenticación fallida")
+        print("Authentication failed")
         smart_contract.set_state(identifier, "Autenticación fallida")
         return 1
 
@@ -105,7 +94,6 @@ def enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tra
         autenticado = authentication(smart_contract, num_crp, puf, permitido)
         if autenticado == 0:
             if intentos == 0:
-                # Autenticado a la primera, pasa al estado "Autenticado"
                 break
             else:
                 smart_contract.set_state(get_id(puf), "En Observacaión")
@@ -113,10 +101,9 @@ def enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tra
         elif autenticado == 1:
             intentos += 1
 
-            # Mientras lo intenta está en el estado "Autenticación fallida"
             if intentos >= intentos_maximos:
-                print("Autenticación fallida por fallos excedidos")
-                smart_contract.set_state(get_id(puf), "Bloqueado por fallos excedidos")
+                print("Authentication failed due to exceeded failures")
+                smart_contract.set_state(get_id(puf), "Denied for exceeded judgements")
                 break
         else:
             break
@@ -127,7 +114,7 @@ def enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tra
     smart_contract = blockchain.get_latest_smart_contract()
     state = smart_contract.get_state(get_id(puf))['estado']
     print()
-    print("Estado: " + str(state))
+    print("State: " + str(state))
 
     if state not in states_tracker:
         states_tracker[state] = {
@@ -135,9 +122,7 @@ def enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tra
             'ids': []
         }
     
-    # Añade el ID del puf a la lista correspondiente al estado
     states_tracker[state]['ids'].append(get_id(puf))
-    # Incrementa el contador del estado
     states_tracker[state]['count'] += 1
 
 def print_states_tracker(states_tracker):
@@ -172,7 +157,6 @@ def main ():
     
     selected_puf_types = random.choices(list(puf_types.values()), k=num_PUFs)
 
-    # Diccionario para contar el número de PUFs generados de cada tipo
     puf_count = defaultdict(int)
 
     # Crear y procesar PUFs aleatorios
@@ -185,10 +169,9 @@ def main ():
         enroll_and_authenticate(smart_contract, blockchain, puf, num_crp, states_tracker, intentos_maximos)
         puf_count[puf_name] += 1
 
-    # Imprimir el conteo de PUFs generados de cada tipo
     print("------------------------------------------------------------------")
     print()
-    print("PUFs generados:")
+    print("PUFs generated:")
     for puf_name, count in puf_count.items():
         print(f"{puf_name}: {count}")
 
@@ -198,17 +181,15 @@ def main ():
     print("------------------------------------------------------------------")
     print()
 
-   
 
-    # Tabla de métricas
     table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Métrica", style="dim", justify="center")
-    table.add_column("Valor", justify="center")
+    table.add_column("Metric", style="dim", justify="center")
+    table.add_column("Value", justify="center")
 
   
-    table.add_row("Hash totales", str(blockchain.get_total_hashes()))
-    table.add_row("Tiempo total", f"{blockchain.get_total_time()} segundos")
-    table.add_row("Tasa media de Hash", f"{blockchain.get_medium_hash_rate()} hashes/segundo")
+    table.add_row("Total Hashes", str(blockchain.get_total_hashes()))
+    table.add_row("Total time", f"{blockchain.get_total_time()} seconds")
+    table.add_row("Average Hash rate", f"{blockchain.get_medium_hash_rate()} hashes/second")
 
     console.print(table)
 
