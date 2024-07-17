@@ -107,7 +107,6 @@ class Blockchain:
         self.pending_smart_contracts.append(smart_contract)
 
         def convert_keys_to_strings(d):
-            """Convierte todas las claves del diccionario a cadenas."""
             if isinstance(d, dict):
                 return {str(k): convert_keys_to_strings(v) for k, v in d.items()}
             elif isinstance(d, list):
